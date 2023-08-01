@@ -550,7 +550,7 @@ namespace RockWeb.Plugins.com_bemaservices.RemoteCheckDeposit
                 var binaryFileTypeService = new BinaryFileTypeService( rockContext );
                 var binaryFile = new BinaryFile
                 {
-                    BinaryFileTypeId = binaryFileTypeService.Get( Rock.SystemGuid.BinaryFiletype.DEFAULT.AsGuid() ).Id,
+                    BinaryFileTypeId = binaryFileTypeService.Get( com.bemaservices.RemoteCheckDeposit.SystemGuid.BinaryFileType.REMOTE_CHECK_DEPOSIT.AsGuid() ).Id,
                     IsTemporary = false,
                     FileName = filename,
                     MimeType = "application/octet-stream", //"octet/stream",

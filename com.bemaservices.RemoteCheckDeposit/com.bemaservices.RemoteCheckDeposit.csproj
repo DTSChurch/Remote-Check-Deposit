@@ -107,6 +107,7 @@
     <Compile Include="Micr.cs" />
     <Compile Include="Migrations\001_AddSystemData.cs" />
     <Compile Include="Migrations\004_AddExportColumns.cs" />
+    <Compile Include="Migrations\005_AddFileType.cs" />
     <Compile Include="Migrations\003_AddAttributes.cs" />
     <Compile Include="Migrations\002_AddPages.cs" />
     <Compile Include="Model\ImageCashLetterFileFormat.cs" />
@@ -142,6 +143,7 @@
     <Compile Include="Records\X937\ImageViewDetail.cs" />
     <Compile Include="StringExtensions.cs" />
     <Compile Include="SystemGuid\Attribute.cs" />
+    <Compile Include="SystemGuid\BinaryFileType.cs" />
     <Compile Include="SystemGuid\Block.cs" />
     <Compile Include="SystemGuid\BlockType.cs" />
     <Compile Include="SystemGuid\EntityType.cs" />
