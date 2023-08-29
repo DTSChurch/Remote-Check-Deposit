@@ -77,13 +77,6 @@ Amount: {{ Amount }}", order: 20 )]
         {
             var header = base.GetFileHeaderRecord( options );
 
-            //10-05-2021: use deposit account number if available
-            var depositAccountNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "DepositAccountNumber" ) );
-            if ( depositAccountNumber.IsNotNullOrWhiteSpace() )
-            {
-                header.ImmediateOriginRoutingNumber = depositAccountNumber;
-            }
-
             //
             // The combination of the following fields must be unique:
             // DestinationRoutingNumber + OriginatingRoutingNumber + CreationDateTime + FileIdModifier
