@@ -7,7 +7,7 @@ namespace com.bemaservices.RemoteCheckDeposit.Migrations
     {
         public override void Up()
         {
-            RockMigrationHelper.AddEntityAttribute( "Rock.Model.FinancialBatch", Rock.SystemGuid.FieldType.BOOLEAN, "", "", "Deposited", "", "Shows if a Financial Batch has been Deposited", 0, "False", SystemGuid.Attribute.FINANCIAL_BATCH_DEPOSITED, "com.bemaservices.Deposited" );
+            RockMigrationHelper.AddOrUpdateEntityAttribute( "Rock.Model.FinancialBatch", Rock.SystemGuid.FieldType.BOOLEAN, "", "", "Deposited", "", "Shows if a Financial Batch has been Deposited", 0, "False", SystemGuid.Attribute.FINANCIAL_BATCH_DEPOSITED, "com.bemaservices.Deposited" );
         }
 
         public override void Down()

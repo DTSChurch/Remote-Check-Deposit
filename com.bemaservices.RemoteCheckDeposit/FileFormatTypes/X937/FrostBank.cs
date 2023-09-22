@@ -208,6 +208,32 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
             return records;
         }
 
+        /// <summary>
+        /// Gets the image record for a specific transaction image (type 50 and 52).
+        /// </summary>
+        /// <param name="options">Export options to be used by the component.</param>
+        /// <param name="transaction">The transaction being deposited.</param>
+        /// <param name="image">The check image scanned by the scanning application.</param>
+        /// <param name="isFront">if set to <c>true</c> [is front].</param>
+        /// <returns>A collection of records.</returns>
+        protected override List<Record> GetImageRecords( ExportOptions options, FinancialTransaction transaction, FinancialTransactionImage image, bool isFront )
+        {
+            var institutionRoutingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "InstitutionRoutingNumber" ) );
+            var records = base.GetImageRecords( options, transaction, image, isFront );
+
+            foreach ( var imageData in records.Where( r => r.RecordType == 52 ).Cast<dynamic>() )
+            {
+                imageData.InstitutionRoutingNumber = institutionRoutingNumber;
+            }
+
+            foreach ( var imageData in records.Where( r => r.RecordType == 50 ).Cast<dynamic>() )
+            {
+                imageData.ImageCreatorRoutingNumber = institutionRoutingNumber;
+            }
+
+            return records;
+        }
+
         ///// <summary>
         ///// Gets the credit detail deposit record (type 61).
         ///// </summary>

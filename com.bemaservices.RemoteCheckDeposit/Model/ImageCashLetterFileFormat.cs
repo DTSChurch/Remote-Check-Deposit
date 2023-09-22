@@ -4,6 +4,7 @@ using System.Data.Entity.ModelConfiguration;
 using System.Runtime.Serialization;
 
 using Rock.Data;
+using Rock.Lava;
 using Rock.Model;
 
 namespace com.bemaservices.RemoteCheckDeposit.Model
@@ -53,7 +54,7 @@ namespace com.bemaservices.RemoteCheckDeposit.Model
         /// <summary>
         /// Gets or sets the component entity type of this file format.
         /// </summary>
-        [LavaInclude]
+        [LavaVisibleAttribute]
         public virtual EntityType EntityType { get; set; }
 
         #endregion
