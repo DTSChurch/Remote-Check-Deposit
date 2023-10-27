@@ -28,39 +28,47 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
     [EncryptedTextField(name: "Commerce Bank Client Id",
         description: "CB Client ID or Client Institution Routing Number. (Record Type 20 Field 4)",
         key: "CommerceBankClientId",
+        category: "X9100 Bank-Specific Fields: Commerce Bank",
         required: true)]
 
     [EncryptedTextField(name: "Unique Customer Id",
         required: true,
+        category: "X9100 Bank-Specific Fields: Commerce Bank",
         description: "Unique customer id that should be provided on summary sheet.(Record Type 01 Field 5 Right Justified)",
         key: "ImmediateOriginRoutingNumber")]
 
     [EncryptedTextField(name: "Immediate Origin Routing Number",
         description: "Immediate Origin Routing Number (Record Type 01 Field 5)",
         required: true,
+        category: "X9100 Bank-Specific Fields: Commerce Bank",
         key: "ImmediateOriginRoutingNumber")]
 
     [EncryptedTextField(name: "Routing Transit Number",
         required: false,
+        category: "X9100 Bank-Specific Fields: Commerce Bank",
         description: "The routing transit number or 'RT' (Record Type 61 Field 5)",
         key: "RoutingTransitNumber")]
 
     [EncryptedTextField(name: "Posting Account Number", 
-        description: "", 
+        description: "",
+        category: "X9100 Bank-Specific Fields: Commerce Bank",
         key: "postingAccountNumber")]
 
     [TextField(name: "Collection Type Indicator",
         required: true,
+        category: "X9100 Bank-Specific Fields: Commerce Bank",
         description: "Cash Letter Header Record (Type 10) Field value must be '00-06', '12', or '90'",
         key: "CollectionTypeValue")]
 
     [BooleanField(name: "Count the Deposit Ticket",
         description: "Set this to true to include the deposit slip in the bundle count.  Default is *usually* false.",
         defaultValue: false,
+        category: "X9100 Bank-Specific Fields: Commerce Bank",
         key: "CountDepositSlip")]
 
     [CodeEditorField("Deposit Slip Template", "The template for the deposit slip that will be generated. <span class='tip tip-lava'></span>",
         Rock.Web.UI.Controls.CodeEditorMode.Lava,
+        category: "Commerce Bank Fields",
         defaultValue: @"Customer: {{ FileFormat | Attribute:'OriginName' }}
 Account: {{ FileFormat | Attribute:'AccountNumber' }}
 Amount: {{ Amount }}", order: 30)]

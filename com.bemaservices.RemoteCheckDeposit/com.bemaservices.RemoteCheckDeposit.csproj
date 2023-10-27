@@ -83,6 +83,9 @@
     <Compile Include="FieldAttribute.cs" />
     <Compile Include="FileFormatTypeComponent.cs" />
     <Compile Include="FileFormatTypeContainer.cs" />
+    <Compile Include="FileFormatTypes\X9100\X9100.cs" />
+    <Compile Include="FileFormatTypes\X9100\USBank.cs" />
+    <Compile Include="FileFormatTypes\X9100\X9100V2DSTU.cs" />
     <Compile Include="FileFormatTypes\X937\BankOfAmericaMerrillLynch.cs" />
     <Compile Include="FileFormatTypes\X937\BankOfAmerica_2021.cs" />
     <Compile Include="FileFormatTypes\X937\BMO.cs" />
