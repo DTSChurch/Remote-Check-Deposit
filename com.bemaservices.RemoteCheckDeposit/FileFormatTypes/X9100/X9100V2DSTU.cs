@@ -321,7 +321,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}", order: 12, required: false, categor
         {
             string destinationRoutingNumber = GetValueWithFallback( options, "DestinationRoutingNumber", "RoutingNumber" );
             string institutionRoutingNumber = GetValueWithFallback( options, "InstitutionRoutingNumber", "RoutingNumber" );
-            if ( institutionRoutingNumber.IsNotNullOrWhiteSpace() )
+            if ( institutionRoutingNumber.IsNullOrWhiteSpace() )
             {
                 institutionRoutingNumber = destinationRoutingNumber;
             }
@@ -484,7 +484,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}", order: 12, required: false, categor
             string destinationRoutingNumber = GetValueWithFallback( options, "DestinationRoutingNumber", "RoutingNumber" );
             string originRoutingNumber = GetValueWithFallback( options, "OriginRoutingNumber", "AccountNumber" );
             string institutionRoutingNumber = GetValueWithFallback( options, "InstitutionRoutingNumber", "RoutingNumber" );
-            if ( institutionRoutingNumber.IsNotNullOrWhiteSpace() )
+            if ( institutionRoutingNumber.IsNullOrWhiteSpace() )
             {
                 institutionRoutingNumber = destinationRoutingNumber;
             }
