@@ -20,25 +20,144 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
     /// Defines the basic functionality of any component that will be exporting using the X9.100
     /// DSTU standard.
     /// </summary>    
-    [TextField( "Origin Name", "The name of the church.", false, "", order: 0, category: "Origin Fields" )]
-    [TextField( "Origin Contact Name", "The name of the person the bank will contact if there are issues.", false, "", order: 1, category: "Origin Fields" )]
-    [TextField( "Origin Contact Phone", "The phone number the bank will call if there are issues.", false, "", order: 2, category: "Origin Fields" )]
-    [EncryptedTextField( "Origin Routing Number", "Your origin routing number.", false, "", order: 3, category: "Origin Fields" )]
 
-    [TextField( "Destination Name", "The name of the bank the deposit will be made to.", false, "", order: 5, category: "Destination Fields" )]
-    [EncryptedTextField( "Destination Routing Number", "The destination routing number.", false, "", order: 6, category: "Destination Fields" )]
+    // Origin Settings
+    [TextField( "Origin Name",
+        Description = "The name of the church.",
+        IsRequired = false,
+        DefaultValue = "",
+        Order = 0,
+        Category = "Origin Fields" )]
+    [TextField( "Origin Contact Name",
+        Description = "The name of the person the bank will contact if there are issues.",
+        IsRequired = false,
+        DefaultValue = "",
+        Order = 1,
+        Category = "Origin Fields" )]
+    [TextField( "Origin Contact Phone",
+        Description = "The phone number the bank will call if there are issues.",
+        IsRequired = false,
+        DefaultValue = "",
+        Order = 2,
+        Category = "Origin Fields" )]
+    [EncryptedTextField( "Origin Routing Number",
+        Description = "Your origin routing number.",
+        IsRequired = false,
+        DefaultValue = "",
+        Order = 3,
+        Category = "Origin Fields" )]
 
-    [EncryptedTextField( "Institution Name", "This is defined by your bank, it is typically but not always the same as the origin name.", false, "", order: 8, category: "Institution Fields" )]
-    [EncryptedTextField( "Institution Routing Number", "This is defined by your bank, it is typically but not always the same as the origin routing number", false, "", order: 8, category: "Institution Fields" )]
+    // Destination Settings
+    [TextField( "Destination Name",
+        Description = "The name of the bank the deposit will be made to.",
+        IsRequired = false,
+        DefaultValue = "",
+        Order = 5,
+        Category = "Destination Fields" )]
+    [EncryptedTextField( "Destination Routing Number",
+        Description = "The destination routing number.",
+        IsRequired = false,
+        DefaultValue = "",
+        Order = 6,
+        Category = "Destination Fields" )]
 
-    [BooleanField( "Test Mode", "If true then the generated files will be marked as test-mode.", true, order: 9, category: "Rock Settings" )]
-    [DefinedValueField( "1D1304DE-E83A-44AF-B11D-0C66DD600B81", "Currency Types To Export", "Select which check types are valid to send in batches to export (Defaults to Checks)", allowMultiple: true, required: true, defaultValue: "8B086A19-405A-451F-8D44-174E92D6B402", order: 10, key: "CurrencyTypes", category: "Rock Settings" )]
-    [BooleanField( "Enable Digital Endorsement", "Prints text on the back of the check digitally, as an endoresment of the check", defaultValue: false, order: 11, category: "Rock Settings" )]
-    [CodeEditorField( "Check Endorsement Template", "The template for the back of check endorsement. <span class='tip tip-lava'></span>", Rock.Web.UI.Controls.CodeEditorMode.Lava, defaultValue: @"{{ FileFormat | Attribute:'OriginName' }}
+    // ECE Institution Settings
+    [EncryptedTextField( "Institution Name",
+        Description = "This is defined by your bank, it is typically but not always the same as the origin name.",
+        IsRequired = false,
+        DefaultValue = "",
+        Order = 7,
+        Category = "ECE Institution Fields" )]
+    [EncryptedTextField( "ECE Institution Routing Number",
+        Key = "InstitutionRoutingNumber",
+        Description = "This is defined by your bank, it is typically but not always the same as the origin routing number",
+        IsRequired = false,
+        DefaultValue = "",
+        Order = 8,
+        Category = "ECE Institution Fields" )]
+    [CustomRadioListField( "Item Sequence Number Justification",
+        Description = "Whether the Item Sequence Number should be Right or Left Justified. The default for most banks is right-justified.",
+        ListSource = "Right,Left",
+        DefaultValue = "Right",
+        Order = 9,
+        IsRequired = true,
+        Category = "ECE Institution Fields" )]
+
+    // BOFD Settings
+    [EncryptedTextField( "BOFD Routing Number",
+        Key = "BOFDRoutingNumber",
+        Description = "This is defined by your bank, it is typically but not always the same as the ECE Institution routing number",
+        IsRequired = false,
+        DefaultValue = "",
+        Order = 9,
+        Category = "Bank of First Deposit Fields" )]
+    [TextField( "Truncation Indicator",
+        Description = "The Default for this value is 'N', but some banks require 'Y'.",
+        IsRequired = false,
+        DefaultValue = "N",
+        Order = 10,
+        Category = "Bank of First Deposit Fields" )]
+
+    // Rock Settings
+    [BooleanField( "Test Mode",
+        Description = "If true then the generated files will be marked as test-mode.",
+        IsRequired = true,
+        Order = 11,
+        Category = "Rock Settings" )]
+    [DefinedValueField( "Currency Types To Export",
+        Key = "CurrencyTypes",
+        DefinedTypeGuid = "1D1304DE-E83A-44AF-B11D-0C66DD600B81",
+        Description = "Select which check types are valid to send in batches to export (Defaults to Checks)",
+        AllowMultiple = true,
+        IsRequired = true,
+        DefaultValue = "8B086A19-405A-451F-8D44-174E92D6B402",
+        Order = 12,
+        Category = "Rock Settings" )]
+    [BooleanField( "Enable Digital Endorsement",
+        Description = "Prints text on the back of the check digitally, as an endoresment of the check",
+        DefaultBooleanValue = false,
+        Order = 13,
+        Category = "Rock Settings" )]
+    [BooleanField( "Enable Digital Endorsement",
+        Description = "Prints text on the back of the check digitally, as an endoresment of the check",
+        DefaultBooleanValue = false,
+        Order = 14,
+        Category = "Rock Settings" )]
+    [CodeEditorField( "Check Endorsement Template",
+        Description = "The template for the back of check endorsement. <span class='tip tip-lava'></span>",
+        EditorMode = Rock.Web.UI.Controls.CodeEditorMode.Lava,
+        Order = 15,
+        IsRequired = false,
+        Category = "Rock Settings",
+        DefaultValue = @"{{ FileFormat | Attribute:'OriginName' }}
 Account: {{ FileFormat | Attribute:'AccountNumber' }}
-Date: {{ BusinessDate | Date:'M/d/yyyy' }}", order: 12, required: false, category: "Rock Settings" )]
+Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
+
     public abstract class X9100V2DSTU : FileFormatTypeComponent
     {
+        #region System Setting Keys
+
+        /// <summary>
+        /// The last item sequence number used for items.
+        /// </summary>
+        protected const string LastItemSequenceNumberKey = "X9100V2DSTU.LastItemSequenceNumber";
+
+        #endregion
+
+        /// <summary>
+        /// Gets the next item sequence number.
+        /// </summary>
+        /// <returns>An integer that identifies the unique item sequence number that can be used.</returns>
+        protected int GetNextItemSequenceNumber()
+        {
+            int lastSequence = GetSystemSetting( LastItemSequenceNumberKey ).AsIntegerOrNull() ?? 0;
+            int nextSequence = lastSequence + 1;
+
+            SetSystemSetting( LastItemSequenceNumberKey, nextSequence.ToString() );
+
+            return nextSequence;
+        }
+
         /// <summary>
         /// Gets the maximum items per bundle. Most banks limit the number of checks that
         /// can exist in each bundle. This specifies what that maximum is.
@@ -415,7 +534,25 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}", order: 12, required: false, categor
         protected virtual List<Record> GetItemDetailRecords( ExportOptions options, FinancialTransaction transaction )
         {
             string originRoutingNumber = GetValueWithFallback( options, "OriginRoutingNumber", "AccountNumber" );
-            string destinationRoutingNumber = GetValueWithFallback( options, "DestinationRoutingNumber", "RoutingNumber" );
+            string institutionRoutingNumber = GetValueWithFallback( options, "InstitutionRoutingNumber", "RoutingNumber" );
+            string bofdRoutingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "BOFDRoutingNumber" ) );
+
+            if ( bofdRoutingNumber.IsNullOrWhiteSpace() )
+            {
+                if ( institutionRoutingNumber.IsNullOrWhiteSpace() )
+                {
+                    institutionRoutingNumber = originRoutingNumber;
+                }
+
+                bofdRoutingNumber = institutionRoutingNumber;
+            }
+
+            var institutionSequenceNumber = institutionRoutingNumber;
+            var sequenceNumberJustification = GetAttributeValue( options.FileFormat, "ItemSequenceNumberJustification" );
+            if ( sequenceNumberJustification == "Left" )
+            {
+                institutionSequenceNumber = institutionSequenceNumber.PadRight( 15, ' ' ).Left( 15 );
+            }
 
             //
             // Parse the MICR data from the transaction.
@@ -449,8 +586,9 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}", order: 12, required: false, categor
                 ExternalProcessingCode = micr.GetExternalProcessingCode(),
                 AuxiliaryOnUs = micr.GetAuxOnUs(),
                 ItemAmount = transaction.TotalAmount,
-                ClientInstitutionItemSequenceNumber = originRoutingNumber,
+                ClientInstitutionItemSequenceNumber = institutionSequenceNumber,
                 DocumentationTypeIndicator = "G",
+                MICRValidIndicator = 1, // Required by US Bank as of 1/19/2024
                 BankOfFirstDepositIndicator = "U",
                 CheckDetailRecordAddendumCount = 1
             };
@@ -458,12 +596,16 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}", order: 12, required: false, categor
             //
             // Get the Addendum A record (type 26).
             //
+
+            string truncationIndicator = GetAttributeValue( options.FileFormat, "TruncationIndicator" ).Substring( 0, 1 ).ToUpper();
+            var sequenceNumber = GetNextItemSequenceNumber();
             var detailA = new Records.X9100.CheckDetailAddendumA
             {
                 RecordNumber = 1,
-                BankOfFirstDepositRoutingNumber = destinationRoutingNumber,
+                BankOfFirstDepositRoutingNumber = bofdRoutingNumber,
                 BankOfFirstDepositBusinessDate = options.BusinessDateTime,
-                TruncationIndicator = "N",
+                TruncationIndicator = truncationIndicator,
+                BankOfFirstDepositItemSequenceNumber = sequenceNumber.ToString( "000000000000000" ),
                 BankOfFirstDepositConversionIndicator = "2",
                 BankOfFirstDepositCorrectionIndicator = "0"
             };
@@ -486,7 +628,14 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}", order: 12, required: false, categor
             string institutionRoutingNumber = GetValueWithFallback( options, "InstitutionRoutingNumber", "RoutingNumber" );
             if ( institutionRoutingNumber.IsNullOrWhiteSpace() )
             {
-                institutionRoutingNumber = destinationRoutingNumber;
+                institutionRoutingNumber = originRoutingNumber;
+            }
+
+            var institutionSequenceNumber = institutionRoutingNumber;
+            var sequenceNumberJustification = GetAttributeValue( options.FileFormat, "ItemSequenceNumberJustification" );
+            if ( sequenceNumberJustification == "Left" )
+            {
+                institutionSequenceNumber = institutionSequenceNumber.PadRight( 15, ' ' ).Left( 15 );
             }
 
             var checkEndorsement = GetAttributeValue( options.FileFormat, "CheckEndorsementTemplate" );
@@ -560,7 +709,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}", order: 12, required: false, categor
             {
                 InstitutionRoutingNumber = institutionRoutingNumber,
                 BundleBusinessDate = options.BusinessDateTime,
-                ClientInstitutionItemSequenceNumber = originRoutingNumber,
+                ClientInstitutionItemSequenceNumber = institutionSequenceNumber,
                 ClippingOrigin = 0,
                 ClippingCoordinateH1 = 0000,
                 ClippingCoordinateH2 = 0000,
