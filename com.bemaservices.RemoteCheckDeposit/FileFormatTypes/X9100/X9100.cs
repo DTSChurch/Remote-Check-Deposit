@@ -24,111 +24,11 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
     [Description( "Processes a batch export for the X9100 Format.  This exports is built on X9.100-187-2008 " )]
     [Export(typeof(FileFormatTypeComponent))]
     [ExportMetadata("ComponentName", "X9100" )]
-
-//    [EncryptedTextField(name: "Commerce Bank Client Id",
-//        description: "CB Client ID or Client Institution Routing Number. (Record Type 20 Field 4)",
-//        key: "CommerceBankClientId",
-//        required: true)]
-
-//    [EncryptedTextField(name: "Unique Customer Id",
-//        required: true,
-//        description: "Unique customer id that should be provided on summary sheet.(Record Type 01 Field 5 Right Justified)",
-//        key: "ImmediateOriginRoutingNumber")]
-
-//    [EncryptedTextField(name: "Immediate Origin Routing Number",
-//        description: "Immediate Origin Routing Number (Record Type 01 Field 5)",
-//        required: true,
-//        key: "ImmediateOriginRoutingNumber")]
-
-//    [EncryptedTextField(name: "Routing Transit Number",
-//        required: false,
-//        description: "The routing transit number or 'RT' (Record Type 61 Field 5)",
-//        key: "RoutingTransitNumber")]
-
-//    [EncryptedTextField(name: "Posting Account Number", 
-//        description: "", 
-//        key: "postingAccountNumber")]
-
-//    [TextField(name: "Collection Type Indicator",
-//        required: true,
-//        description: "Cash Letter Header Record (Type 10) Field value must be '00-06', '12', or '90'",
-//        key: "CollectionTypeValue")]
-
-//    [BooleanField(name: "Count the Deposit Ticket",
-//        description: "Set this to true to include the deposit slip in the bundle count.  Default is *usually* false.",
-//        defaultValue: false,
-//        key: "CountDepositSlip")]
-
-//    [CodeEditorField("Deposit Slip Template", "The template for the deposit slip that will be generated. <span class='tip tip-lava'></span>",
-//        Rock.Web.UI.Controls.CodeEditorMode.Lava,
-//        defaultValue: @"Customer: {{ FileFormat | Attribute:'OriginName' }}
-//Account: {{ FileFormat | Attribute:'AccountNumber' }}
-//Amount: {{ Amount }}", order: 30)]
     class X9100 : X9100V2DSTU
     {
         #region Private Members
 
         const string BANK_NAME_KEY = "X9100";
-
-        ///// <summary>
-        ///// Account Number
-        ///// </summary>
-        //private string accountNumber = string.Empty;
-
-        ///// <summary>
-        ///// CB Client Id Record Type 20 Field 4
-        ///// </summary>
-        //private string usBankClientId = string.Empty;
-
-        ///// <summary>
-        ///// Routing Number
-        ///// </summary>
-        //private string routingNumber = string.Empty;
-
-        ///// <summary>
-        ///// The Routing Transit number Rec
-        ///// </summary>
-        //private int routingTransitNumber = 0;
-
-        ///// <summary>
-        ///// The immediate origin routing number Record Type Field 5
-        ///// </summary>
-        //private string originRoutingNumber = string.Empty;
-
-        ///// <summary>
-        ///// Collection Type Indicator
-        ///// </summary>
-        //private int collectionTypeIndicator = 00;
-
-        ///// <summary>
-        ///// Counts the deposit slip in the item counts
-        ///// </summary>
-        //private bool countDepositSlip = false;
-
-        ///// <summary>
-        ///// Contact Name
-        ///// </summary>
-        //private string contactName = string.Empty;
-
-        ///// <summary>
-        ///// Contact Phone
-        ///// </summary>
-        //private string contactPhone = string.Empty;
-
-        ///// <summary>
-        ///// Location Field used for identifying different stores or accounts on CB.  
-        ///// </summary>
-        //private string locationField = string.Empty;
-
-        ///// <summary>
-        ///// Arbitrary cycle number that must match in different record types.
-        ///// </summary>
-        //private string cycleNumber = string.Empty;
-
-        ///// <summary>
-        ///// Field Header Record (Type 01) Field 5 unique customer id right justified
-        ///// </summary>
-        //private string uniqueCustomerId = string.Empty;
 
         #endregion
 
@@ -317,28 +217,6 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
         /// <param name="options">ExportOptions</param>
         private void Setup(ExportOptions options)
         {
-            //this.cycleNumber = (((int)DateTime.Now.DayOfWeek == 0) ? 7 : (int)DateTime.Now.DayOfWeek).ToString();
-
-            //this.accountNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "AccountNumber"));
-            //this.routingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "RoutingNumber"));
-            //this.originRoutingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "ImmediateOriginRoutingNumber"));
-            //this.usBankClientId = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "CommerceBankClientId"));
-            //this.contactName = GetAttributeValue(options.FileFormat, "ContactName");
-            //this.contactPhone = GetAttributeValue(options.FileFormat, "ContactPhone").Replace(" ", string.Empty);
-            //this.countDepositSlip = bool.Parse(GetAttributeValue(options.FileFormat, "CountDepositSlip"));
-
-            // Try and get the routing transit number Record Type 61 Field 5
-            //int.TryParse(Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "RoutingTransitNumber")), 
-            //    out this.routingTransitNumber);
-
-            // Try and get an int value from the collection type value
-            //int.TryParse(GetAttributeValue(options.FileFormat, "CollectionTypeValue"), out this.collectionTypeIndicator);
-
-            // Get the location Field from the dictionary 
-            if (options.ExtraOptions.ContainsKey("LocationField"))
-            {
-                //this.locationField = options.ExtraOptions["LocationField"].ToStringSafe().Trim();
-            }
         }
 
         /// <summary>

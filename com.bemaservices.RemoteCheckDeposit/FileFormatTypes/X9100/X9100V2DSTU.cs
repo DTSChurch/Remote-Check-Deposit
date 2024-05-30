@@ -536,6 +536,8 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
             string originRoutingNumber = GetValueWithFallback( options, "OriginRoutingNumber", "AccountNumber" );
             string institutionRoutingNumber = GetValueWithFallback( options, "InstitutionRoutingNumber", "RoutingNumber" );
             string bofdRoutingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, "BOFDRoutingNumber" ) );
+            var sequenceNumber = GetNextItemSequenceNumber();
+
 
             if ( bofdRoutingNumber.IsNullOrWhiteSpace() )
             {
@@ -547,7 +549,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
                 bofdRoutingNumber = institutionRoutingNumber;
             }
 
-            var institutionSequenceNumber = institutionRoutingNumber;
+            var institutionSequenceNumber = sequenceNumber.ToString();
             var sequenceNumberJustification = GetAttributeValue( options.FileFormat, "ItemSequenceNumberJustification" );
             if ( sequenceNumberJustification == "Left" )
             {
@@ -598,7 +600,6 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
             //
 
             string truncationIndicator = GetAttributeValue( options.FileFormat, "TruncationIndicator" ).Substring( 0, 1 ).ToUpper();
-            var sequenceNumber = GetNextItemSequenceNumber();
             var detailA = new Records.X9100.CheckDetailAddendumA
             {
                 RecordNumber = 1,
@@ -631,7 +632,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
                 institutionRoutingNumber = originRoutingNumber;
             }
 
-            var institutionSequenceNumber = institutionRoutingNumber;
+            var institutionSequenceNumber = GetNextItemSequenceNumber().ToString();
             var sequenceNumberJustification = GetAttributeValue( options.FileFormat, "ItemSequenceNumberJustification" );
             if ( sequenceNumberJustification == "Left" )
             {
