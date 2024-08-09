@@ -13,11 +13,13 @@ using Rock.Web.UI.Controls;
 using com.bemaservices.RemoteCheckDeposit.Model;
 using System.Drawing;
 using System.Windows.Media.Imaging;
+using com.bemaservices.RemoteCheckDeposit.Records.X937;
+using System.Data.Entity.Validation;
 
 namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
 {
     /// <summary>
-    /// Defines the basic functionality of any component that will be exporting using the X9.100
+    /// Defines the basic functionality of any component that will be exporting using the X9.37
     /// DSTU standard.
     /// </summary>    
 
@@ -107,7 +109,6 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
         Order = 1,
         Category = "Bank of First Deposit Fields" )]
 
-	/*
     // Credit Deposit Settings
     [EnumField( "Credit Record Type",
         Description = "What type of credit detail deposit record should be included if any. Type 61.A is an alternate version of Type 61 with a RecordUsageIndicator field.",
@@ -136,8 +137,7 @@ CICL-{{ FileFormat | Attribute:'AccountNumber' }}
 Account: {{ FileFormat | Attribute:'AccountNumber' }}
 Amount: {{ Amount }}
 ItemCount: {{ ItemCount }}" )]
-	*/
-	
+
     // Rock Settings
     [BooleanField( "Test Mode",
         Description = "If true then the generated files will be marked as test-mode.",
@@ -170,8 +170,7 @@ ItemCount: {{ ItemCount }}" )]
         DefaultValue = @"{{ FileFormat | Attribute:'OriginName' }}
 Account: {{ FileFormat | Attribute:'AccountNumber' }}
 Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
-
-    public abstract class X9100V2DSTU : FileFormatTypeComponent
+    public abstract class X937V2DSTU : FileFormatTypeComponent
     {
         #region Attribute Keys
         private static class AttributeKey
@@ -195,14 +194,10 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
             public const string BOFDRoutingNumber = "BOFDRoutingNumber";
             public const string TruncationIndicator = "TruncationIndicator";
 
-			/*
-			Copied from the generic X937 file format. 
-			Commented out until we can update the X9100 Credit Detail file type.
             // Credit Deposit Settings
             public const string CreditRecordType = "CreditRecordType";
             public const string CreditDepositCheckNumber = "CreditDepositCheckNumber";
             public const string DepositSlipTemplate = "DepositSlipTemplate";
-			*/
 
             // Rock Settings
             public const string TestMode = "TestMode";
@@ -222,16 +217,16 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
         /// The system setting for the next cash header identifier. These should never be
         /// repeated. Ever.
         /// </summary>
-        protected const string SystemSettingNextCashHeaderId = "X9100V2DSTU.NextCashHeaderId";
+        protected const string SystemSettingNextCashHeaderId = "X937V2DSTU.NextCashHeaderId";
 
         /// <summary>
         /// The system setting that contains the last file modifier we used.
         /// </summary>
-        protected const string SystemSettingLastFileModifier = "X9100V2DSTU.LastFileModifier";
+        protected const string SystemSettingLastFileModifier = "X937V2DSTU.LastFileModifier";
         /// <summary>
         /// The last item sequence number used for items.
         /// </summary>
-        protected const string LastItemSequenceNumberKey = "X9100V2DSTU.LastItemSequenceNumber";
+        protected const string LastItemSequenceNumberKey = "X937V2DSTU.LastItemSequenceNumber";
 
         #endregion
 
@@ -308,7 +303,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
             }
 
             //
-            // Generate all the X9.100 records for this set of transactions.
+            // Generate all the X9.37 records for this set of transactions.
             //
             records.Add( GetFileHeaderRecord( options ) );
             records.Add( GetCashLetterHeaderRecord( options ) );
@@ -341,12 +336,12 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
         /// </summary>
         /// <param name="options">Export options to be used by the component.</param>
         /// <returns>A FileHeader record.</returns>
-        protected virtual Records.X9100.FileHeader GetFileHeaderRecord( ExportOptions options )
+        protected virtual Records.X937.FileHeader GetFileHeaderRecord( ExportOptions options )
         {
             string destinationRoutingNumber = GetValueWithFallback( options, AttributeKey.DestinationRoutingNumber, AttributeKey.ObsoleteRoutingNumber );
             string originRoutingNumber = GetValueWithFallback( options, AttributeKey.OriginRoutingNumber, AttributeKey.ObsoleteAccountNumber );
 
-            var header = new Records.X9100.FileHeader
+            var header = new Records.X937.FileHeader
             {
                 StandardLevel = 03,
                 FileTypeIndicator = GetAttributeValue( options.FileFormat, AttributeKey.TestMode ).AsBoolean( true ) ? "T" : "P",
@@ -357,7 +352,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
                 ImmediateDestinationName = GetAttributeValue( options.FileFormat, AttributeKey.DestinationName ),
                 ImmediateOriginName = GetAttributeValue( options.FileFormat, AttributeKey.OriginName ),
                 FileIdModifier = "1", // TODO: Need some way to track this and reset each day.
-                CountryCode = string.Empty,
+                CountryCode = "US", /* Should be safe, X9.37 is only used in the US as far as I know. */
                 UserField = string.Empty
             };
 
@@ -370,7 +365,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
         /// <param name="options">Export options to be used by the component.</param>
         /// <param name="records">The existing records in the file.</param>
         /// <returns>A FileControl record.</returns>
-        protected virtual Records.X9100.FileControl GetFileControlRecord( ExportOptions options, List<Record> records )
+        protected virtual Records.X937.FileControl GetFileControlRecord( ExportOptions options, List<Record> records )
         {
             var cashHeaderRecords = records.Where( r => r.RecordType == 10 );
             var detailRecords = records.Where( r => r.RecordType == 25 ).Cast<dynamic>();
@@ -378,7 +373,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
             //var itemRecords = records.Where( r => r.RecordType == 25 ); // Only count checks!
             var itemRecords = records.Where( r => r.RecordType == 25 || r.RecordType == 61 );
 
-            var control = new Records.X9100.FileControl
+            var control = new Records.X937.FileControl
             {
                 CashLetterCount = cashHeaderRecords.Count(),
                 TotalRecordCount = records.Count + 1, /* Plus one to include self */
@@ -401,29 +396,29 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
         /// <param name="options">Export options to be used by the component.</param>
         /// <returns>A CashLetterHeader record.</returns>
         /// 
-        protected virtual Records.X9100.CashLetterHeader GetCashLetterHeaderRecord( ExportOptions options )
+        protected virtual Records.X937.CashLetterHeader GetCashLetterHeaderRecord( ExportOptions options )
         {
             var destinationRoutingNumber = int.Parse( GetValueWithFallback( options, AttributeKey.DestinationRoutingNumber, AttributeKey.ObsoleteRoutingNumber ) );
             var institutionRoutingNumber = int.Parse( GetValueWithFallback( options, AttributeKey.InstitutionRoutingNumber, AttributeKey.ObsoleteAccountNumber ) );
             var contactName = GetAttributeValue( options.FileFormat, AttributeKey.OriginContactName );
             var contactPhone = GetAttributeValue( options.FileFormat, AttributeKey.OriginContactPhone );
 
-            var header = new Records.X9100.CashLetterHeader
+            int cashHeaderId = GetSystemSetting( SystemSettingNextCashHeaderId ).AsIntegerOrNull() ?? 0;
+
+            var header = new Records.X937.CashLetterHeader
             {
+                ID = cashHeaderId.ToString( "D8" ),
                 CollectionTypeIndicator = 01,
-                DestinationRoutingNumber = destinationRoutingNumber,
-                EceInstitutionRoutingNumber = institutionRoutingNumber,
-                CashLetterBusinessDate = options.BusinessDateTime,
-                CashLetterCreationDate = options.BusinessDateTime,
-                CashLetterCreationTime = options.ExportDateTime.ToString( "HHMM" ),
-                CashLetterRecordTypeIndicator = "I",
-                CashLetterDocumentationTypeIndicator = "G",
-                CashLetterId = options.GetHashCode().ToStringSafe(),
+                DestinationRoutingNumber = destinationRoutingNumber.ToStringSafe(),
+                ClientInstitutionRoutingNumber = institutionRoutingNumber.ToStringSafe(),
+                BusinessDate = options.BusinessDateTime,
+                CreationDateTime = options.ExportDateTime,
+                RecordTypeIndicator = "I",
+                DocumentationTypeIndicator = "G",
                 OriginatorContactName = contactName,
-                OriginatorContactPhoneNumber = contactPhone,
-                FedWorkType = string.Empty,
-                ReturnsIndicator = string.Empty
+                OriginatorContactPhoneNumber = contactPhone
             };
+            SetSystemSetting( SystemSettingNextCashHeaderId, ( cashHeaderId + 1 ).ToString() );
 
             return header;
         }
@@ -435,7 +430,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
         /// <param name="options">Export options to be used by the component.</param>
         /// <param name="records">Existing records in the cash letter.</param>
         /// <returns>A CashLetterControl record.</returns>
-        protected virtual Records.X9100.CashLetterControl GetCashLetterControlRecord( ExportOptions options, List<Record> records )
+        protected virtual Records.X937.CashLetterControl GetCashLetterControlRecord( ExportOptions options, List<Record> records )
         {
             var bundleHeaderRecords = records.Where( r => r.RecordType == 20 );
             var checkDetailRecords = records.Where( r => r.RecordType == 25 ).Cast<dynamic>();
@@ -447,7 +442,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
             var imageDetailRecords = records.Where( r => r.RecordType == 52 );
             var institutionName = GetValueWithFallback( options, AttributeKey.InstitutionName, AttributeKey.OriginName );
 
-            var control = new Records.X9100.CashLetterControl
+            var control = new Records.X937.CashLetterControl
             {
                 BundleCount = bundleHeaderRecords.Count(),
                 ItemCount = itemRecords.Count(),
@@ -533,7 +528,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
         /// <param name="options">Export options to be used by the component.</param>
         /// <param name="bundleIndex">Number of existing bundle records in the cash letter.</param>
         /// <returns>A BundleHeader record.</returns>
-        protected virtual Records.X9100.BundleHeader GetBundleHeader( ExportOptions options, int bundleIndex )
+        protected virtual Records.X937.BundleHeader GetBundleHeader( ExportOptions options, int bundleIndex )
         {
             string destinationRoutingNumber = GetValueWithFallback( options, AttributeKey.DestinationRoutingNumber, AttributeKey.ObsoleteRoutingNumber );
             string institutionRoutingNumber = GetValueWithFallback( options, AttributeKey.InstitutionRoutingNumber, AttributeKey.ObsoleteRoutingNumber  );
@@ -542,14 +537,14 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
                 institutionRoutingNumber = destinationRoutingNumber;
             }
 
-            var header = new Records.X9100.BundleHeader
+            var header = new Records.X937.BundleHeader
             {
                 CollectionTypeIndicator = 1,
                 DestinationRoutingNumber = destinationRoutingNumber,
                 ClientInstitutionRoutingNumber = institutionRoutingNumber,
                 BusinessDate = options.BusinessDateTime,
                 CreationDate = options.ExportDateTime,
-                ID = string.Empty,
+                ID = ( bundleIndex + 1 ).ToString(),
                 SequenceNumber = ( bundleIndex + 1 ).ToString(),
                 CycleNumber = string.Empty,
                 ReturnLocationRoutingNumber = destinationRoutingNumber
@@ -569,12 +564,11 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
         {
             string originRoutingNumber = GetValueWithFallback( options, AttributeKey.OriginRoutingNumber, AttributeKey.ObsoleteAccountNumber );
             string institutionRoutingNumber = GetValueWithFallback( options, AttributeKey.InstitutionRoutingNumber, AttributeKey.ObsoleteRoutingNumber );
-            //var creditDetailRecordType = GetAttributeValue( options.FileFormat, AttributeKey.CreditRecordType ).ConvertToEnum<CreditDetailRecordType>( CreditDetailRecordType.None );
-            //var creditDepositCheckNumber = GetAttributeValue( options.FileFormat, AttributeKey.CreditDepositCheckNumber );
+            var creditDetailRecordType = GetAttributeValue( options.FileFormat, AttributeKey.CreditRecordType ).ConvertToEnum<CreditDetailRecordType>( CreditDetailRecordType.None );
+            var creditDepositCheckNumber = GetAttributeValue( options.FileFormat, AttributeKey.CreditDepositCheckNumber );
 
             var records = new List<Record>();
 
-            /*
             if ( creditDetailRecordType != CreditDetailRecordType.None )
             {
                 var itemAmount = transactions.Sum( p => p.TotalAmount );
@@ -652,7 +646,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
                     }
                 }
             }
-            */
+
 
             return records;
         }
@@ -669,7 +663,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
             var bitmap = new System.Drawing.Bitmap( 1200, 550 );
             var g = System.Drawing.Graphics.FromImage( bitmap );
 
-            var depositSlipTemplate = ""; // GetAttributeValue( options.FileFormat, AttributeKey.DepositSlipTemplate );
+            var depositSlipTemplate = GetAttributeValue( options.FileFormat, AttributeKey.DepositSlipTemplate );
             var mergeFields = new Dictionary<string, object>
             {
                 { "FileFormat", options.FileFormat },
@@ -720,13 +714,13 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
         /// <param name="options">Export options to be used by the component.</param>
         /// <param name="records">The existing records in the bundle.</param>
         /// <returns>A BundleControl record.</returns>
-        protected virtual Records.X9100.BundleControl GetBundleControl( ExportOptions options, List<Record> records )
+        protected virtual Records.X937.BundleControl GetBundleControl( ExportOptions options, List<Record> records )
         {
             var itemRecords = records.Where( r => r.RecordType == 25 || r.RecordType == 61 );
             var checkDetailRecords = records.Where( r => r.RecordType == 25 ).Cast<dynamic>();
             var imageDetailRecords = records.Where( r => r.RecordType == 52 );
 
-            var control = new Records.X9100.BundleControl
+            var control = new Records.X937.BundleControl
             {
                 ItemCount = itemRecords.Count(),
                 TotalAmount = checkDetailRecords.Sum( r => ( decimal ) r.ItemAmount ),
@@ -821,7 +815,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
             //
             // Get the Check Detail record (type 25).
             //
-            var detail = new Records.X9100.CheckDetail
+            var detail = new Records.X937.CheckDetail
             {
                 PayorBankRoutingNumber = transactionRoutingNumber.Substring( 0, 8 ),
                 PayorBankRoutingNumberCheckDigit = transactionRoutingNumber.Substring( 8, 1 ),
@@ -832,16 +826,15 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
                 ClientInstitutionItemSequenceNumber = institutionSequenceNumber,
                 DocumentationTypeIndicator = "G",
                 MICRValidIndicator = 1,
-                BankOfFirstDepositIndicator = "U",
+                BankOfFirstDepositIndicator = "Y",
                 CheckDetailRecordAddendumCount = 1
             };
 
             //
             // Get the Addendum A record (type 26).
             //
-
             string truncationIndicator = GetAttributeValue( options.FileFormat, AttributeKey.TruncationIndicator ).Substring( 0, 1 ).ToUpper();
-            var detailA = new Records.X9100.CheckDetailAddendumA
+            var detailA = new Records.X937.CheckDetailAddendumA
             {
                 RecordNumber = 1,
                 BankOfFirstDepositRoutingNumber = bofdRoutingNumber,
@@ -927,7 +920,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
             //
             // Get the Image View Detail record (type 50).
             //
-            var detail = new Records.X9100.ImageViewDetail
+            var detail = new Records.X937.ImageViewDetail
             {
                 ImageIndicator = 1,
                 ImageCreatorRoutingNumber = destinationRoutingNumber,
@@ -947,7 +940,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
             //
             // Get the Image View Data record (type 52).
             //
-            var data = new Records.X9100.ImageViewData
+            var data = new Records.X937.ImageViewData
             {
                 InstitutionRoutingNumber = institutionRoutingNumber,
                 BundleBusinessDate = options.BusinessDateTime,
@@ -1032,7 +1025,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
         #endregion
     }
 
-    public enum CreditDetailRecordTypeX9100
+    public enum CreditDetailRecordType
     {
         None = 0,
         Type61 = 1,

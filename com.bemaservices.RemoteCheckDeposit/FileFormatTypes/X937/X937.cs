@@ -21,10 +21,10 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
     /// Defines the basic functionality of any component that will be exporting using the X9.100
     /// DSTU standard.
     /// </summary>
-    [Description( "Processes a batch export for the X9100 Format.  This exports is built on X9.100-187-2008 " )]
+    [Description( "Processes a batch export for the X937 Format." )]
     [Export(typeof(FileFormatTypeComponent))]
-    [ExportMetadata("ComponentName", "X9100" )]
-    class X9100 : X9100V2DSTU
+    [ExportMetadata("ComponentName", "X937" )]
+    class X937 : X937V2DSTU
     {
         #region Export Batches
 
@@ -58,12 +58,12 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
             // Perform error checking to ensure that all the transactions in these batches
             // are of the proper currency type.
             //
-            //int currencyTypeCheckId = Rock.Web.Cache.DefinedValueCache.Get(Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK).Id;
-            //if (transactions.Any(t => t.FinancialPaymentDetail.CurrencyTypeValueId != currencyTypeCheckId))
-            //{
-            //    errorMessages.Add("One or more transactions is not of type 'Check'.");
-            //    return null;
-            //}
+            int currencyTypeCheckId = Rock.Web.Cache.DefinedValueCache.Get( Rock.SystemGuid.DefinedValue.CURRENCY_TYPE_CHECK ).Id;
+            if ( transactions.Any( t => t.FinancialPaymentDetail.CurrencyTypeValueId != currencyTypeCheckId ) )
+            {
+                errorMessages.Add( "One or more transactions is not of type 'Check'." );
+                return null;
+            }
 
             //
             // Generate all the X9.100 records for this set of transactions.

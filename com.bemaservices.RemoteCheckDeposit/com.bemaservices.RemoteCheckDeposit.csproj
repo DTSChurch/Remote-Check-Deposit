@@ -106,6 +106,8 @@
     <Compile Include="FileFormatTypes\X937\WheatonBank.cs" />
     <Compile Include="FileFormatTypes\X937\WintrustFinancial.cs" />
     <Compile Include="FileFormatTypes\X9100\X9100DSTU.cs" />
+    <Compile Include="FileFormatTypes\X937\X937.cs" />
+    <Compile Include="FileFormatTypes\X937\X937V2DSTU.cs" />
     <Compile Include="FileFormatTypes\X937\X937DSTU.cs" />
     <Compile Include="Micr.cs" />
     <Compile Include="Migrations\001_AddSystemData.cs" />
