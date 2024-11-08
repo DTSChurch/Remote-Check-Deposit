@@ -138,6 +138,21 @@ Account: {{ FileFormat | Attribute:'AccountNumber' }}
 Amount: {{ Amount }}
 ItemCount: {{ ItemCount }}" )]
 
+    // MICR Settings
+    [IntegerField( "Minimum Check Number Digits",
+        Description = "The minimum check number digits for the On-Us field. If the account number is too long to account for it, leading digits in the account number will be cut off. Any check numbers with less digits will have '0' appended to the front. Default is 3",
+        Key = AttributeKey.MinimumCheckNumberDigits,
+        IsRequired = true,
+        Order = 0,
+        DefaultIntegerValue = 3,
+        Category = "MICR Settings" )]
+    [IntegerField( "Maximum Check Number Digits",
+        Description = "The maximum number of digits a check number can have before it is moved from Field 6 On-Us to Field 1 Aux On-Us. Default is blank.",
+        Key = AttributeKey.MaximumCheckNumberDigits,
+        IsRequired = false,
+        Order = 1,
+        Category = "MICR Settings" )]
+
     // Rock Settings
     [BooleanField( "Test Mode",
         Description = "If true then the generated files will be marked as test-mode.",
@@ -198,6 +213,10 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
             public const string CreditRecordType = "CreditRecordType";
             public const string CreditDepositCheckNumber = "CreditDepositCheckNumber";
             public const string DepositSlipTemplate = "DepositSlipTemplate";
+
+            // MICR Settings
+            public const string MinimumCheckNumberDigits = "MinimumCheckNumberDigits";
+            public const string MaximumCheckNumberDigits = "MaximumCheckNumberDigits";
 
             // Rock Settings
             public const string TestMode = "TestMode";
@@ -531,7 +550,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
         protected virtual Records.X937.BundleHeader GetBundleHeader( ExportOptions options, int bundleIndex )
         {
             string destinationRoutingNumber = GetValueWithFallback( options, AttributeKey.DestinationRoutingNumber, AttributeKey.ObsoleteRoutingNumber );
-            string institutionRoutingNumber = GetValueWithFallback( options, AttributeKey.InstitutionRoutingNumber, AttributeKey.ObsoleteRoutingNumber  );
+            string institutionRoutingNumber = GetValueWithFallback( options, AttributeKey.InstitutionRoutingNumber, AttributeKey.ObsoleteRoutingNumber );
             if ( institutionRoutingNumber.IsNullOrWhiteSpace() )
             {
                 institutionRoutingNumber = destinationRoutingNumber;
@@ -773,6 +792,8 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
             string bofdRoutingNumber = Rock.Security.Encryption.DecryptString( GetAttributeValue( options.FileFormat, AttributeKey.BOFDRoutingNumber ) );
             var sequenceNumber = GetNextItemSequenceNumber();
 
+            int minimumCheckNumberDigits = GetAttributeValue( options.FileFormat, AttributeKey.MinimumCheckNumberDigits ).AsIntegerOrNull() ?? 3;
+            int? maximumCheckNumberDigits = GetAttributeValue( options.FileFormat, AttributeKey.MaximumCheckNumberDigits ).AsIntegerOrNull();
 
             if ( bofdRoutingNumber.IsNullOrWhiteSpace() )
             {
@@ -801,15 +822,35 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
             //
             // On-Us Calculation (check account numbers can be too big)
             //
-            string onUs = string.Format( "{0}/{1}", micr.GetAccountNumber().TrimStart( '0' ), micr.GetCheckNumber().TrimStart( '0' ) );
-            if ( onUs.Length > 20 ) //too big
+            var micrAccountNumber = micr.GetAccountNumber().TrimStart( '0' );
+            var micrCheckNumber = micr.GetCheckNumber().TrimStart( '0' );
+            var micrAuxOnUs = micr.GetAuxOnUs();
+
+            while ( micrCheckNumber.Length < minimumCheckNumberDigits )
             {
-                int checkNumberLength = onUs.Length - micr.GetAccountNumber().Length - 1;  //number of characters left for the check number
-                if ( checkNumberLength < 3 )
+                micrCheckNumber = string.Format( "0{0}", micrCheckNumber );
+            }
+
+            if ( maximumCheckNumberDigits.HasValue && micrCheckNumber.Length > maximumCheckNumberDigits )
+            {
+                micrAuxOnUs = micrCheckNumber;
+                micrCheckNumber = string.Empty;
+            }
+
+            string onUs = micrAccountNumber;
+
+            if ( micrCheckNumber.IsNotNullOrWhiteSpace() )
+            {
+                onUs = string.Format( "{0}/{1}", micrAccountNumber, micrCheckNumber );
+                if ( onUs.Length > 20 ) //too big
                 {
-                    checkNumberLength = 3; //Minimum length of 3
+                    int checkNumberLength = onUs.Length - micrAccountNumber.Length - 1;  //number of characters left for the check number
+                    if ( checkNumberLength < minimumCheckNumberDigits )
+                    {
+                        checkNumberLength = minimumCheckNumberDigits; // Set Minimum Length
+                    }
+                    onUs = string.Format( "{0}/{1}", micrAccountNumber, micrCheckNumber.Right( checkNumberLength ) );
                 }
-                onUs = string.Format( "{0}/{1}", micr.GetAccountNumber().TrimStart( '0' ), micr.GetCheckNumber().TrimStart( '0' ).Right( checkNumberLength ) );
             }
 
             //
@@ -821,7 +862,7 @@ Date: {{ BusinessDate | Date:'M/d/yyyy' }}" )]
                 PayorBankRoutingNumberCheckDigit = transactionRoutingNumber.Substring( 8, 1 ),
                 OnUs = onUs.Right( 20 ), //get just right side of field as the front of an account number may be chopped off
                 ExternalProcessingCode = micr.GetExternalProcessingCode(),
-                AuxiliaryOnUs = micr.GetAuxOnUs(),
+                AuxiliaryOnUs = micrAuxOnUs.Right( 15 ), //get just right side of field as the front of a number may be chopped off,
                 ItemAmount = transaction.TotalAmount,
                 ClientInstitutionItemSequenceNumber = institutionSequenceNumber,
                 DocumentationTypeIndicator = "G",
