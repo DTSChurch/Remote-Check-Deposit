@@ -574,7 +574,7 @@ namespace RockWeb.Plugins.com_bemaservices.RemoteCheckDeposit
                 //
                 pnlOptions.Visible = false;
                 pnlSuccess.Visible = true;
-                hlDownload.NavigateUrl = ResolveUrl( string.Format( "~/GetFile.ashx?Id={0}&attachment=True", binaryFile.Id ) );
+                hlDownload.NavigateUrl = ResolveUrl( string.Format( "~/GetFile.ashx?guid={0}&attachment=True", binaryFile.Guid ) );
             }
         }
 
@@ -799,7 +799,7 @@ namespace RockWeb.Plugins.com_bemaservices.RemoteCheckDeposit
                     var binaryFile = new BinaryFileService( new RockContext() ).Get( fileGuid.Value );
                     if ( binaryFile != null )
                     {
-                        lExportFile.Text = string.Format( "<a href='/GetFile.ashx?guid='{0}' target='_blank'>{1}</a>", binaryFile.Guid, binaryFile.FileName );
+                        lExportFile.Text = string.Format( "<a href='/GetFile.ashx?guid={0}' target='_blank'>{1}</a>", binaryFile.Guid, binaryFile.FileName );
                     }
                 }
             }
