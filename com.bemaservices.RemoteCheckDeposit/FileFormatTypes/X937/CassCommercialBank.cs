@@ -28,10 +28,24 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
     [Description("Processes a batch export for Cass Commercial Bank.")]
     [Export(typeof(FileFormatTypeComponent))]
     [ExportMetadata("ComponentName", "Cass Commercial Bank")]
+    [BooleanField(name: "Count the Deposit Ticket",
+        description: "Set this to true to include the deposit slip in the bundle count.  Default is *usually* false.",
+        defaultValue: false,
+        key: "CountDepositSlip")]
     //[EncryptedTextField("Origin Routing Number", "Used on Type 10 Record 3 for Account Routing", true, key: "OriginRoutingNumber")]
     //[EncryptedTextField("Destination Routing Number", "", true, "072000096", key: "DestinationRoutingNumber")]
     public class CassCommercialBank : X937DSTU
     {
+
+        #region Private Members
+
+        /// <summary>
+        /// Counts the deposit slip in the item counts
+        /// </summary>
+        private bool countDepositSlip = false;
+        #endregion
+
+
         #region System Setting Keys
         /// <summary>
         /// The system setting for the next cash header identifier. These should never be
@@ -50,6 +64,9 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
         protected const string LastItemSequenceNumberKey = "CassCommercial.LastItemSequenceNumber";
         #endregion
 
+        /// <summary>
+        /// Gets the File Header Record (type 01)
+        /// </summary>
         protected override FileHeader GetFileHeaderRecord(ExportOptions options)
         {
             var header = base.GetFileHeaderRecord(options);
@@ -62,7 +79,9 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
             return header;
         }
 
-
+        /// <summary>
+        /// Gets the Cash Letter Header Record (type 10)
+        /// </summary>
         protected override CashLetterHeader GetCashLetterHeaderRecord(ExportOptions options)
         {
             int cashHeaderId = GetSystemSetting(SystemSettingNextCashHeaderId).AsIntegerOrNull() ?? 0;
@@ -78,6 +97,9 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
             return header;
         }
 
+        /// <summary>
+        /// Gets the Bundle Header Record (type 20)
+        /// </summary>
         protected override BundleHeader GetBundleHeader(ExportOptions options, int bundleIndex)
         {
             var header = base.GetBundleHeader(options, bundleIndex);
@@ -92,12 +114,9 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
             return header;
         }
 
-        // <summary>
+        /// <summary>
         /// Gets the item detail records (type 25)
         /// </summary>
-        /// <param name="options">Export options to be used by the component.</param>
-        /// <param name="transaction">The transaction being deposited.</param>
-        /// <returns>A collection of records.</returns>
         protected override List<Record> GetItemDetailRecords(ExportOptions options, FinancialTransaction transaction)
         {
             //var accountNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "AccountNumber"));
@@ -132,15 +151,11 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
 
             return new List<Record> { detail };
         }
+      
 
-        // <summary>
+        /// <summary>
         /// Gets the image record for a specific transaction image (type 50 and 52).
         /// </summary>
-        /// <param name="options">Export options to be used by the component.</param>
-        /// <param name="transaction">The transaction being deposited.</param>
-        /// <param name="image">The check image scanned by the scanning application.</param>
-        /// <param name="isFront">if set to <c>true</c> [is front].</param>
-        /// <returns>A collection of records.</returns>
         protected override List<Record> GetImageRecords(ExportOptions options, FinancialTransaction transaction, FinancialTransactionImage image, bool isFront)
         {
             var institutionRoutingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "InstitutionRoutingNumber"));
@@ -160,20 +175,83 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
         }
 
         /// <summary>
+        /// Gets the credit detail deposit record (type 61).
+        /// </summary>
+        protected override List<Record> GetCreditDetailRecords(ExportOptions options, int bundleIndex, List<FinancialTransaction> transactions)
+        {
+            var accountNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "AccountNumber"));
+            var routingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "RoutingNumber"));
+            var payorRoutingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "PayorRoutingNumber"));
+            var destinationRoutingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "DestinationRoutingNumber"));
+            var records = new List<Record>();
+
+            var creditDetail = new CreditDetail
+            {
+                PayorRoutingNumber = payorRoutingNumber,
+                CreditAccountNumber = accountNumber + "/",
+                Amount = transactions.Sum(t => t.TotalAmount),
+                InstitutionItemSequenceNumber = GetNextItemSequenceNumber().ToString("000000000000000"),
+                DocumentTypeIndicator = "G",
+                SourceOfWorkCode = "3",
+                DebitCreditIndicator = "2"
+            };
+            records.Add(creditDetail);
+
+            for (int i = 0; i < 2; i++)
+            {
+                using (var ms = GetDepositSlipImage(options, creditDetail, i == 0))
+                {
+                    var tiffImageBytes = ConvertImageToTiffG4(ms).ReadBytesToEnd();
+                    //
+                    // Get the Image View Detail record (type 50).
+                    //
+                    var detail = new ImageViewDetail
+                    {
+                        ImageIndicator = 1,
+                        ImageCreatorRoutingNumber = destinationRoutingNumber,
+                        ImageCreatorDate = options.ExportDateTime,
+                        ImageViewFormatIndicator = 0,
+                        DataSize = (int)tiffImageBytes.Length,
+                        CompressionAlgorithmIdentifier = 0,
+                        SideIndicator = i,
+                        ViewDescriptor = 0,
+                        DigitalSignatureIndicator = 0
+                    };
+
+                    //
+                    // Get the Image View Data record (type 52).
+                    //
+                    var data = new ImageViewData
+                    {
+                        InstitutionRoutingNumber = routingNumber,
+                        CycleNumber = string.Empty,
+                        BundleBusinessDate = options.BusinessDateTime,
+                        ClientInstitutionItemSequenceNumber = creditDetail.InstitutionItemSequenceNumber,
+                        ClippingOrigin = 0,
+                        ImageData = ms.ReadBytesToEnd()
+                    };
+
+                    records.Add(detail);
+                    records.Add(data);
+                }
+            }
+
+            return records;
+        }
+
+        /// <summary>
         /// Gets the bundle control record (type 70).
         /// </summary>
-        /// <param name="options">Export options to be used by the component.</param>
-        /// <param name="records">The existing records in the bundle.</param>
-        /// <returns>A BundleControl record.</returns>
+
         protected override Records.X937.BundleControl GetBundleControl(ExportOptions options, List<Record> records)
         {
             var itemRecords = records.Where(r => r.RecordType == 25);
 
             // If we are including the credit items then we need to count those as well.
-            /*if (this.countDepositSlip)
+            if (this.countDepositSlip)
             {
                 itemRecords = records.Where(r => r.RecordType == 25 && r.RecordType == 61);  // Just Overwrite
-            }*/
+            }
 
             var checkDetailRecords = records.Where(r => r.RecordType == 25).Cast<dynamic>(); // Only count checks and not the credit detail
             var imageDetailRecords = records.Where(r => r.RecordType == 52);
@@ -205,10 +283,10 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
             var organizationName = GetAttributeValue(options.FileFormat, "OriginName");
 
             // Some banks *might* include the deposit slip
-            /*if (this.countDepositSlip)
+            if (this.countDepositSlip)
             {
                 itemRecords = records.Where(r => r.RecordType == 25 && r.RecordType == 61); // Just Overwrite.
-            }*/
+            }
 
             // Record Type 90
             var control = new Records.X937.CashLetterControl
@@ -224,17 +302,28 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
             return control;
         }
 
+        /// <summary>
+        /// Gets the cash letter control record (type 99).
+        /// </summary>
         protected override FileControl GetFileControlRecord(ExportOptions options, List<Record> records)
         {
             var fileControl = base.GetFileControlRecord(options, records);
+            var itemRecords = records.Where(r => r.RecordType == 25); // Only count record types 25.
+            // Some banks *might* include the deposit slip
+            if (this.countDepositSlip)
+            {
+                itemRecords = records.Where(r => r.RecordType == 25 && r.RecordType == 61); // Just Overwrite.
+            }
 
             fileControl.ImmediateOriginContactName = "".PadRight(14, ' ');
             fileControl.ImmediateOriginContactPhoneNumber = "0".PadRight(10, ' ');
+            fileControl.TotalItemCount = itemRecords.Count();
 
             return fileControl;
         }
 
-        /*protected int GetNextItemSequenceNumber()
+        #region Helper Methods
+        protected int GetNextItemSequenceNumber()
         {
             int lastSequence = GetSystemSetting(LastItemSequenceNumberKey).AsIntegerOrNull() ?? 0;
             int nextSequence = lastSequence + 1;
@@ -242,15 +331,66 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
             SetSystemSetting(LastItemSequenceNumberKey, nextSequence.ToString());
 
             return nextSequence;
-        }*/
+        }
 
-        
+        /// <summary>
+        /// Gets the credit detail deposit record (type 61).
+        /// </summary>
+        /// <returns>A stream that contains the image data in TIFF 6.0 CCITT Group 4 format.</returns>
+        protected virtual Stream GetDepositSlipImage(ExportOptions options, CreditDetail creditDetail, bool isFrontSide)
+        {
+            var bitmap = new System.Drawing.Bitmap(1200, 550);
+            var g = System.Drawing.Graphics.FromImage(bitmap);
+
+            var depositSlipTemplate = GetAttributeValue(options.FileFormat, "DepositSlipTemplate");
+            var mergeFields = new Dictionary<string, object>
+            {
+                { "FileFormat", options.FileFormat },
+                { "Amount", creditDetail.Amount.ToString( "C" ) }
+            };
+            var depositSlipText = depositSlipTemplate.ResolveMergeFields(mergeFields);
+
+            //
+            // Ensure we are opague with white.
+            //
+            g.FillRectangle(System.Drawing.Brushes.White, new System.Drawing.Rectangle(0, 0, 1200, 550));
+
+            if (isFrontSide)
+            {
+                g.DrawString(depositSlipText,
+                    new System.Drawing.Font("Tahoma", 30),
+                    System.Drawing.Brushes.Black,
+                    new System.Drawing.PointF(50, 50));
+            }
+
+            g.Flush();
+
+            //
+            // Ensure the DPI is correct.
+            //
+            bitmap.SetResolution(200, 200);
+
+            //
+            // Compress using TIFF, CCITT Group 4 format.
+            //
+            var codecInfo = System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders()
+                .Where(c => c.MimeType == "image/tiff")
+                .First();
+            var parameters = new System.Drawing.Imaging.EncoderParameters(1);
+            parameters.Param[0] = new System.Drawing.Imaging.EncoderParameter(System.Drawing.Imaging.Encoder.Compression, (long)System.Drawing.Imaging.EncoderValue.CompressionCCITT4);
+
+            var ms = new MemoryStream();
+            bitmap.Save(ms, codecInfo, parameters);
+            ms.Position = 0;
+
+            return ms;
+        }
+        #endregion
+
 
         /// <summary>
         /// Hashes the string with SHA256.
         /// </summary>
-        /// <param name="contents">The contents to be hashed.</param>
-        /// <returns>A hex representation of the hash.</returns>
         protected string HashString(string contents)
         {
             byte[] byteContents = Encoding.Unicode.GetBytes(contents);
