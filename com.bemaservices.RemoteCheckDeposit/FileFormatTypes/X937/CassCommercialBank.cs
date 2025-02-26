@@ -28,12 +28,12 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
     [Description("Processes a batch export for Cass Commercial Bank.")]
     [Export(typeof(FileFormatTypeComponent))]
     [ExportMetadata("ComponentName", "Cass Commercial Bank")]
+    [EncryptedTextField("Destination Routing Number", "", true, "081000605", key: "DestinationRoutingNumber")]
     [BooleanField(name: "Count the Deposit Ticket",
         description: "Set this to true to include the deposit slip in the bundle count.  Default is *usually* false.",
         defaultValue: false,
         key: "CountDepositSlip")]
     //[EncryptedTextField("Origin Routing Number", "Used on Type 10 Record 3 for Account Routing", true, key: "OriginRoutingNumber")]
-    //[EncryptedTextField("Destination Routing Number", "", true, "072000096", key: "DestinationRoutingNumber")]
     public class CassCommercialBank : X937DSTU
     {
 
@@ -181,14 +181,14 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
         {
             var accountNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "AccountNumber"));
             var routingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "RoutingNumber"));
-            var payorRoutingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "PayorRoutingNumber"));
+            //var payorRoutingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "PayorRoutingNumber"));
             var destinationRoutingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "DestinationRoutingNumber"));
             var records = new List<Record>();
 
             var creditDetail = new CreditDetail
             {
-                PayorRoutingNumber = payorRoutingNumber,
-                CreditAccountNumber = accountNumber + "/",
+                PayorRoutingNumber = routingNumber,//payorRoutingNumber,
+                CreditAccountNumber = accountNumber, //accountNumber + "/",
                 Amount = transactions.Sum(t => t.TotalAmount),
                 InstitutionItemSequenceNumber = GetNextItemSequenceNumber().ToString("000000000000000"),
                 DocumentTypeIndicator = "G",
@@ -203,7 +203,7 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
                 {
                     var tiffImageBytes = ConvertImageToTiffG4(ms).ReadBytesToEnd();
                     //
-                    // Get the Image View Detail record (type 50).
+                    // Get the Image View Detail record (type 50)
                     //
                     var detail = new ImageViewDetail
                     {
