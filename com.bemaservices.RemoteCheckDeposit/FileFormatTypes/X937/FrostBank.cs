@@ -198,6 +198,7 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
 
             //Modify Check Detail Adden A
             var checkDetailA = records.Where( r => r.RecordType == 26 ).Cast<Records.X937.CheckDetailAddendumA>().FirstOrDefault();
+            checkDetailA.BankOfFirstDepositItemSequenceNumber = sequenceNumber.ToString("000000000000000"); // DTS - added because Wells Fargo now requires this field
             checkDetailA.TruncationIndicator = "Y";
 
             foreach ( var imageData in records.Where( r => r.RecordType == 52 ).Cast<dynamic>() )
