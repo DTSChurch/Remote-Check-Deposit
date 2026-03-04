@@ -176,7 +176,7 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
         /// <summary>
         /// Gets the credit detail deposit record (type 61).
         /// </summary>
-        protected override List<Record> GetCreditDetailRecords(ExportOptions options, int bundleIndex, List<FinancialTransaction> transactions)
+       /* protected override List<Record> GetCreditDetailRecords(ExportOptions options, int bundleIndex, List<FinancialTransaction> transactions)
         {
             var accountNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "AccountNumber"));
             var routingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "RoutingNumber"));
@@ -235,7 +235,7 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
             }
 
             return records;
-        }
+        }*/
 
         /// <summary>
         /// Gets the bundle control record (type 70).

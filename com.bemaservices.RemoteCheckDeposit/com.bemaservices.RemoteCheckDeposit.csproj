@@ -114,6 +114,7 @@
     <Compile Include="FileFormatTypes\X937\BBandT.cs" />
     <Compile Include="FileFormatTypes\X937\BBVACompass.cs" />
     <Compile Include="FileFormatTypes\X937\CassCommercialBank.cs" />
+    <Compile Include="FileFormatTypes\X937\JackHenry.cs" />
     <Compile Include="FileFormatTypes\X937\Midfirst.cs" />
     <Compile Include="FileFormatTypes\X937\ComericaBank.cs" />
     <Compile Include="FileFormatTypes\X9100\CommerceBank.cs" />
@@ -121,6 +122,7 @@
     <Compile Include="FileFormatTypes\X937\FifthThirdBank.cs" />
     <Compile Include="FileFormatTypes\X937\FrostBank.cs" />
     <Compile Include="FileFormatTypes\X937\MandT.cs" />
+    <Compile Include="FileFormatTypes\X937\MontgomeryBank.cs" />
     <Compile Include="FileFormatTypes\X937\PNC.cs" />
     <Compile Include="FileFormatTypes\X937\Regions.cs" />
     <Compile Include="FileFormatTypes\X937\SouthernFirstBank.cs" />
