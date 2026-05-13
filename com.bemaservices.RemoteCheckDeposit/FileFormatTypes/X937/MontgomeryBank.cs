@@ -33,6 +33,9 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
         description: "Set this to true to include the deposit slip in the bundle count.  Default is *usually* false.",
         defaultValue: false,
         key: "CountDepositSlip")]
+    [CodeEditorField("Deposit Slip Template", "The template for the deposit slip that will be generated. <span class='tip tip-lava'></span>", Rock.Web.UI.Controls.CodeEditorMode.Lava, defaultValue: @"Customer: {{ FileFormat | Attribute:'OriginName' }}
+Account: {{ FileFormat | Attribute:'AccountNumber' }}
+Amount: {{ Amount }}", order: 20)]
     //[EncryptedTextField("Origin Routing Number", "Used on Type 10 Record 3 for Account Routing", true, key: "OriginRoutingNumber")]
     public class MontgomeryBank : X937DSTU
     {
@@ -176,67 +179,83 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
         /// <summary>
         /// Gets the credit detail deposit record (type 61).
         /// </summary>
-       /* protected override List<Record> GetCreditDetailRecords(ExportOptions options, int bundleIndex, List<FinancialTransaction> transactions)
-        {
-            var accountNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "AccountNumber"));
-            var routingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "RoutingNumber"));
-            var destinationRoutingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "DestinationRoutingNumber"));
-            var records = new List<Record>();
 
-            var creditDetail = new CreditDetail
+        // added
+            /// <summary>
+            /// Fake Get the credit detail deposit record (type 61) but convert to record type 25 to simulate a Deposit Slip
+            /// </summary>
+            protected override List<Record> GetCreditDetailRecords(ExportOptions options, int bundleIndex, List<FinancialTransaction> transactions)
             {
-                PayorRoutingNumber = routingNumber,
-                CreditAccountNumber = accountNumber + "/",
-                Amount = transactions.Sum(t => t.TotalAmount),
-                InstitutionItemSequenceNumber = GetNextItemSequenceNumber().ToString("000000000000000"),
-                DocumentTypeIndicator = "G",
-                SourceOfWorkCode = "3",
-                DebitCreditIndicator = "2"
-            };
-            records.Add(creditDetail);
+                var accountNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "AccountNumber"));
+                var routingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "RoutingNumber"));
+                var destinationRoutingNumber = Rock.Security.Encryption.DecryptString(GetAttributeValue(options.FileFormat, "DestinationRoutingNumber"));
+                var records = new List<Record>();
 
-            for (int i = 0; i < 2; i++)
-            {
-                using (var ms = GetDepositSlipImage(options, creditDetail, i == 0))
+                var creditDetail = new CheckDetail //change to record type 25
                 {
-                    var tiffImageBytes = ConvertImageToTiffG4(ms).ReadBytesToEnd();
-                    //
-                    // Get the Image View Detail record (type 50)
-                    //
-                    var detail = new ImageViewDetail
-                    {
-                        ImageIndicator = 1,
-                        ImageCreatorRoutingNumber = destinationRoutingNumber,
-                        ImageCreatorDate = options.ExportDateTime,
-                        ImageViewFormatIndicator = 0,
-                        DataSize = (int)tiffImageBytes.Length,
-                        CompressionAlgorithmIdentifier = 0,
-                        SideIndicator = i,
-                        ViewDescriptor = 0,
-                        DigitalSignatureIndicator = 0
-                    };
+                    PayorBankRoutingNumber = routingNumber.Substring(0, 8),
+                    PayorBankRoutingNumberCheckDigit = routingNumber.Substring(8, 1),
+                    OnUs = accountNumber,//.PadLeft(18, '0').PadLeft(20, ' '),
+                    ItemAmount = transactions.Sum(t => t.TotalAmount),
+                    ClientInstitutionItemSequenceNumber = GetNextItemSequenceNumber().ToString("000000000000000"),
+                    BankOfFirstDepositIndicator = "U",
+                    CheckDetailRecordAddendumCount = 00,
+                    DocumentationTypeIndicator = "G"
+                };
+                var detailA = new CheckDetailAddendumA
+                {
+                    RecordNumber = 1,
+                    BankOfFirstDepositRoutingNumber = routingNumber,
+                    BankOfFirstDepositBusinessDate = options.BusinessDateTime,
+                    TruncationIndicator = "Y",
+                    BankOfFirstDepositConversionIndicator = "",
+                    BankOfFirstDepositCorrectionIndicator = ""
+                };
+                records.Add(creditDetail);
+                records.Add(detailA);
 
-                    //
-                    // Get the Image View Data record (type 52).
-                    //
-                    var data = new ImageViewData
+                for (int i = 0; i < 2; i++)
+                {
+                    using (var ms = GetDepositSlipImage(options, creditDetail, i == 0, transactions))
                     {
-                        InstitutionRoutingNumber = routingNumber,
-                        CycleNumber = string.Empty,
-                        BundleBusinessDate = options.BusinessDateTime,
-                        ClientInstitutionItemSequenceNumber = creditDetail.InstitutionItemSequenceNumber,
-                        ClippingOrigin = 0,
-                        ImageData = ms.ReadBytesToEnd()
-                    };
+                        var tiffImageBytes = ConvertImageToTiffG4(ms).ReadBytesToEnd();
+                        //
+                        // Get the Image View Detail record (type 50)
+                        //
+                        var detail = new ImageViewDetail
+                        {
+                            ImageIndicator = 1,
+                            ImageCreatorRoutingNumber = destinationRoutingNumber,
+                            ImageCreatorDate = options.ExportDateTime,
+                            ImageViewFormatIndicator = 0,
+                            DataSize = (int)tiffImageBytes.Length,
+                            CompressionAlgorithmIdentifier = 0,
+                            SideIndicator = i,
+                            ViewDescriptor = 0,
+                            DigitalSignatureIndicator = 0
+                        };
 
-                    records.Add(detail);
-                    records.Add(data);
+                        //
+                        // Get the Image View Data record (type 52).
+                        //
+                        var data = new ImageViewData
+                        {
+                            InstitutionRoutingNumber = routingNumber,
+                            CycleNumber = string.Empty,
+                            BundleBusinessDate = options.BusinessDateTime,
+                            ClientInstitutionItemSequenceNumber = creditDetail.ClientInstitutionItemSequenceNumber,
+                            ClippingOrigin = 0,
+                            ImageData = ms.ReadBytesToEnd()
+                        };
+
+                        records.Add(detail);
+                        records.Add(data);
+                    }
                 }
-            }
 
-            return records;
-        }*/
-
+                return records;
+            } 
+        // end added
         /// <summary>
         /// Gets the bundle control record (type 70).
         /// </summary>
@@ -330,6 +349,65 @@ namespace com.bemaservices.RemoteCheckDeposit.FileFormatTypes
 
             return nextSequence;
         }
+
+        //added
+            /// <summary>
+            /// Gets the credit detail deposit record (type 61).
+            /// </summary>
+            /// <param name="options">Export options to be used by the component.</param>
+            /// <param name="transactions">The transactions associated with this deposit.</param>
+            /// <param name="isFrontSide">True if the image to be retrieved is the front image.</param>
+            /// <returns>A stream that contains the image data in TIFF 6.0 CCITT Group 4 format.</returns>
+            protected virtual Stream GetDepositSlipImage(ExportOptions options, CheckDetail creditDetail, bool isFrontSide, List<FinancialTransaction> transactions)
+            {
+                var bitmap = new System.Drawing.Bitmap(1200, 550);
+                var g = System.Drawing.Graphics.FromImage(bitmap);
+
+                var depositSlipTemplate = GetAttributeValue(options.FileFormat, "DepositSlipTemplate");
+                var mergeFields = new Dictionary<string, object>
+                {
+                    { "FileFormat", options.FileFormat },
+                    { "Amount", creditDetail.ItemAmount.ToString( "C" ) },
+                    { "ItemCount", transactions.Count() }
+                };
+                var depositSlipText = depositSlipTemplate.ResolveMergeFields(mergeFields, null);
+
+                //
+                // Ensure we are opague with white.
+                //
+                g.FillRectangle(System.Drawing.Brushes.White, new System.Drawing.Rectangle(0, 0, 1200, 550));
+
+                if (isFrontSide)
+                {
+                    g.DrawString(depositSlipText,
+                        new System.Drawing.Font("Tahoma", 20),
+                        System.Drawing.Brushes.Black,
+                        new System.Drawing.PointF(50, 50));
+                }
+
+                g.Flush();
+
+                //
+                // Ensure the DPI is correct.
+                //
+                bitmap.SetResolution(200, 200);
+
+                //
+                // Compress using TIFF, CCITT Group 4 format.
+                //
+                var codecInfo = System.Drawing.Imaging.ImageCodecInfo.GetImageEncoders()
+                    .Where(c => c.MimeType == "image/tiff")
+                    .First();
+                var parameters = new System.Drawing.Imaging.EncoderParameters(1);
+                parameters.Param[0] = new System.Drawing.Imaging.EncoderParameter(System.Drawing.Imaging.Encoder.Compression, (long)System.Drawing.Imaging.EncoderValue.CompressionCCITT4);
+
+                var ms = new MemoryStream();
+                bitmap.Save(ms, codecInfo, parameters);
+                ms.Position = 0;
+
+                return ms;
+            }
+        // end added
 
         /// <summary>
         /// Gets the credit detail deposit record (type 61).
